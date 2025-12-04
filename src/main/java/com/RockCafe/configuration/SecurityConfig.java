@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/api/list_items", "/images/**", "/main.css", "/newItem.css", "/style.css").permitAll()
                 // Console H2 (apenas para dev)
                 .requestMatchers("/h2-console/**").permitAll()
-                // Qualquer outra requisição precisa de login (criar, editar, deletar)
+                // Qualquer outra requisição precisa de login (criar, editar, deletar, upload)
                 .anyRequest().authenticated()
             )
             .formLogin((form) -> form
@@ -33,8 +33,8 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/api/list_items") // Redireciona para a lista após deslogar
                 .permitAll()
             )
-            // Configurações necessárias para o H2 Console funcionar
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"))
+            // Libera o CSRF para o console H2 e para o UPLOAD de imagens via fetch
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/upload_image"))
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();

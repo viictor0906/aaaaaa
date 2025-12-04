@@ -47,11 +47,12 @@ public class FileUploadController
             image.setUrlimg(fileName);
             imageRepository.save(image);
 
-            return ResponseEntity.ok("/images/" + fileName);
+            // CORREÇÃO: Retorna apenas o nome do arquivo para o front-end
+            return ResponseEntity.ok(fileName);
         }
         catch(IOException error) 
         {
             return ResponseEntity.status(500).body("Erro ao enviar arquivo: " + error.getMessage());
         }
     }
-}
+}   

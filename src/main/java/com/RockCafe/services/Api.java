@@ -33,13 +33,7 @@ public class Api
     }
 
     @GetMapping("/list_items")
-    String listItems
-    (
-        Model model, 
-        @RequestParam(required = false) String name,
-        @RequestParam(required = false) Float price, 
-        HttpServletRequest req
-    ) 
+    public String listItems(Model model, @RequestParam(required = false) String name, @RequestParam(required = false) Float price, HttpServletRequest req) 
     {
         var items = itemRepository.findAll();
 
@@ -62,85 +56,90 @@ public class Api
     }
 
     @GetMapping("/list_images")
-    String listImages
-    (
-        Model model, 
-        @RequestParam(required = false) Long id,
-        HttpServletRequest req
-    ) 
+    public String listImages(Model model, @RequestParam(required = false) Long id, HttpServletRequest req) 
     {
         var images = imageRepository.findAll();
-
-        if(id != null) 
-        {
+        if(id != null) {
             images = images.stream().filter(t -> t.getId() == id).toList();
         }
-
         model.addAttribute("images", images);
         model.addAttribute("id", id);
-
         return "images_list";
     }
 
     @GetMapping("/new_item")
-    String novaTarefa(Model model) 
+    public String novaTarefa(Model model) 
     {
         model.addAttribute("item", new Item());
-        
+        // Garante que a lista de imagens vá para o dropdown
+        model.addAttribute("images", imageRepository.findAll()); 
         return "new_item";
     }
 
     @GetMapping("/new_image")
-    String novaImagem(Model model) 
+    public String novaImagem(Model model) 
     {
         model.addAttribute("image", new Image());
-        model.addAttribute("image", imageRepository.findAll());
-
+        model.addAttribute("images", imageRepository.findAll());
         return "new_image";
     }
 
     @PostMapping("/save_item")
-    String saveItem
-    (
-        @Valid @ModelAttribute("item") Item item, 
-        BindingResult br, 
-        Model model,
-        RedirectAttributes ra
-    ) 
+    public String saveItem(@Valid @ModelAttribute("item") Item item, BindingResult br, Model model, RedirectAttributes ra) 
     {
         if(br.hasErrors()) 
         {
-            // --- ADICIONE ESTE BLOCO PARA VER O ERRO NO CONSOLE ---
-            System.out.println("--- ERROS DE VALIDAÇÃO ---");
-            br.getAllErrors().forEach(error -> {
-                System.out.println(error.toString());
-            });
-            // -------------------------------------------------------
-
             model.addAttribute("item", item);
+            model.addAttribute("images", imageRepository.findAll());
             model.addAttribute("erros", "Erro ao salvar item, preencha os campos corretamente.");
-
             return "new_item";
         }
 
         ra.addFlashAttribute("sucesso", "Item salvo com sucesso!");
         itemRepository.save(item);
-
         return "redirect:/api/list_items";
     }
 
-    @GetMapping("{id}/editItem")
-    String editItem(@PathVariable Long id, Model model) 
+    @PostMapping("/save_image")
+    public String saveImage(@Valid @ModelAttribute("image") Image image, BindingResult br, Model model, RedirectAttributes ra) 
+    {
+        if (br.hasErrors()) 
+        {
+            model.addAttribute("image", image);
+            model.addAttribute("erros", "Erro ao salvar imagem.");
+            return "new_image";
+        }
+        ra.addFlashAttribute("sucesso", "Image salva com sucesso!");
+        imageRepository.save(image);
+        return "redirect:/api/list_images";
+    }
+
+    @PostMapping("/{id}/deleteItem")
+    public String deleteItem(@PathVariable("id") Long id) 
+    {
+        itemRepository.deleteById(id);
+        return "redirect:/api/list_items";
+    }
+
+    // --- FUNÇÃO PARA DELETAR IMAGEM ---
+    @PostMapping("/{id}/deleteImage")
+    public String deleteImage(@PathVariable("id") Long id) 
+    {
+        // Nota: Isso deleta do banco, mas idealmente deveria deletar o arquivo da pasta também
+        imageRepository.deleteById(id);
+        return "redirect:/api/list_images";
+    }
+
+    @GetMapping("/{id}/editItem")
+    public String editItem(@PathVariable("id") Long id, Model model) 
     {
         var item = itemRepository.findById(id);
-
         if(item.isEmpty()) 
         {
             return "redirect:/api/list_items";
         }
-
         model.addAttribute("item", item.get());
-
+        model.addAttribute("images", imageRepository.findAll());
         return "new_item";
     }
 }
